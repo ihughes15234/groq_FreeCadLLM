@@ -2,8 +2,8 @@ import streamlit as st
 from typing import Generator
 from groq import Groq
 
-st.set_page_config(page_icon="💬", layout="wide",
-                   page_title="Groq Goes Brrrrrrrr...")
+st.set_page_config(page_icon="🛠️", layout="wide",
+                   page_title="Groq FreeCad Test")
 
 
 def icon(emoji: str):
@@ -14,9 +14,9 @@ def icon(emoji: str):
     )
 
 
-icon("🏎️")
+icon("🛠️")
 
-st.subheader("Groq Chat Streamlit App", divider="rainbow", anchor=False)
+st.subheader("Groq Chat Streamlit App - FreeCad Prompt Engineering", divider="violet", anchor=False)
 
 client = Groq(
     api_key=st.secrets["GROQ_API_KEY"],
@@ -31,12 +31,10 @@ if "selected_model" not in st.session_state:
 
 # Define model details
 models = {
-    "gemma2-9b-it": {"name": "Gemma2-9b-it", "tokens": 8192, "developer": "Google"},
     "llama-3.3-70b-versatile": {"name": "LLaMA3.3-70b-versatile", "tokens": 128000, "developer": "Meta"},
-    "llama-3.1-8b-instant" : {"name": "LLaMA3.1-8b-instant", "tokens": 128000, "developer": "Meta"},
     "llama3-70b-8192": {"name": "LLaMA3-70b-8192", "tokens": 8192, "developer": "Meta"},
-    "llama3-8b-8192": {"name": "LLaMA3-8b-8192", "tokens": 8192, "developer": "Meta"},
     "mixtral-8x7b-32768": {"name": "Mixtral-8x7b-Instruct-v0.1", "tokens": 32768, "developer": "Mistral"},
+    "DeepSeek-R1-Distill-Llama-70B": {"name": "DeepSeek-R1-Distill-Llama-70B", "tokens": 128000, "developer": "DeepSeek"},
 }
 
 # Layout for model selection and max_tokens slider
@@ -47,7 +45,7 @@ with col1:
         "Choose a model:",
         options=list(models.keys()),
         format_func=lambda x: models[x]["name"],
-        index=4  # Default to mixtral
+        index=0  # Default to Llama3.3-70b-versatile
     )
 
 # Detect model change and clear chat history if model has changed
@@ -71,7 +69,14 @@ with col2:
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
-    avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
+    if message["role"] == "assistant":
+        avatar = '🤖' 
+    elif message["role"] == "user":
+        avatar ='👨‍💻'
+    else:
+        avatar ='📄'
+    
+    
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
@@ -84,6 +89,11 @@ def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
 
 
 if prompt := st.chat_input("Enter your prompt here..."):
+    sys_inst = "These are the System Instructions to guide LLM generation: Return only Python code for FreeCAD followed by a 1-2 sentence summary of caveats"
+    st.session_state.messages.append({"role": "system", "content": sys_inst})
+    with st.chat_message("system", avatar='📄'):
+        st.markdown(sys_inst)
+    
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user", avatar='👨‍💻'):
@@ -95,6 +105,7 @@ if prompt := st.chat_input("Enter your prompt here..."):
             model=model_option,
             messages=[
                 {
+
                     "role": m["role"],
                     "content": m["content"]
                 }
